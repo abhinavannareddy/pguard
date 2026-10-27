@@ -27,3 +27,15 @@ def test_probe_command_exits_2_with_blocker_when_nothing_measured(tmp_path, monk
     monkeypatch.setattr(cli, "run_probe", lambda **_: _report(None))
     assert cli.main(["probe", "--out", str(tmp_path / "r.json")]) == 2
     assert "BLOCKER" in capsys.readouterr().err
+
+
+def test_probe_states_command_exit_code_follows_verdict(tmp_path, monkeypatch, capsys):
+    flat = {"still": [-41] * 60, "walking": [-41] * 60, "lying": [-41] * 60}
+    monkeypatch.setattr(cli, "record_states", lambda *a, **k: flat)
+    out = tmp_path / "s.json"
+    assert cli.main(["probe-states", "--seconds", "12", "--out", str(out)]) == 3
+    assert json.loads(out.read_text(encoding="utf-8"))["verdict"] == "FAIL_CONSTANT"
+    assert "FAIL_CONSTANT" in capsys.readouterr().out
+    moving = flat | {"walking": [-49, -41] * 30}
+    monkeypatch.setattr(cli, "record_states", lambda *a, **k: moving)
+    assert cli.main(["probe-states", "--seconds", "12", "--out", str(out)]) == 0

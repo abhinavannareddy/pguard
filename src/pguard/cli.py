@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from .acquisition.probe import run_probe
+from .acquisition.states import REQUIRED_LABELS, Verdict, analyze_states, record_states
 
 
 def _probe(args: argparse.Namespace) -> int:
@@ -25,6 +26,28 @@ def _probe(args: argparse.Namespace) -> int:
     return 0
 
 
+def _announce(message: str) -> None:
+    sys.stdout.write(message + "\n")
+    sys.stdout.flush()
+    try:
+        import winsound
+        winsound.Beep(880, 250)
+    except (ImportError, RuntimeError):
+        pass
+
+
+def _states(args: argparse.Namespace) -> int:
+    labels = REQUIRED_LABELS
+    data = record_states(labels, args.seconds, args.interval, args.countdown,
+                         announce=_announce)
+    hz = sum(len(v) for v in data.values()) / (args.seconds * len(labels))
+    report = analyze_states(data, hz=hz)
+    out = report.to_dict() | {"achieved_hz": round(hz, 2)}
+    Path(args.out).write_text(json.dumps(out, indent=2), encoding="utf-8")
+    sys.stdout.write(f"{report.verdict.value}: {report.message}\n{json.dumps(report.stats)}\n")
+    return 0 if report.verdict is Verdict.PASS else 3
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="pguard")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -33,6 +56,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--interval", type=float, default=0.1)
     p.add_argument("--out", default="probe-report.json")
     p.set_defaults(func=_probe)
+    s = sub.add_parser("probe-states", help="labeled test: still vs walking vs lying")
+    s.add_argument("--seconds", type=float, default=20.0)
+    s.add_argument("--interval", type=float, default=0.1)
+    s.add_argument("--countdown", type=float, default=8.0)
+    s.add_argument("--out", default="states-report.json")
+    s.set_defaults(func=_states)
     args = parser.parse_args(argv)
     return args.func(args)
 

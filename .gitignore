@@ -10,3 +10,4 @@ node_modules/
 .env
 *.db
 probe-report.json
+states-report.json
