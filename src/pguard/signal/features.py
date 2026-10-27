@@ -11,6 +11,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import Enum
 
+from .. import PARAMS_VERSION
 from ..acquisition.windows_wifi import RSSI_MAX_DBM, RSSI_MIN_DBM, Sample
 
 _EPS = 1e-9
@@ -25,7 +26,7 @@ class State(Enum):
 
 @dataclass(frozen=True)
 class Params:
-    version: str = "1"
+    version: str = PARAMS_VERSION
     window_s: float = 2.0
     expected_hz: float = 5.0
     stale_s: float = 1.0

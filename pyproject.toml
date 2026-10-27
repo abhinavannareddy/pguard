@@ -7,19 +7,11 @@ name = "pguard"
 version = "0.1.0"
 description = "Privacy-first Wi-Fi safety and wellbeing monitor (Tier 1: RSSI presence, motion, inactivity)"
 requires-python = ">=3.12"
-license = { text = "Apache-2.0" }
-dependencies = [
-  "numpy>=2.0",
-  "fastapi>=0.115",
-  "uvicorn[standard]>=0.30",
-  "pydantic>=2.8",
-  "sqlalchemy>=2.0",
-  "httpx>=0.27",
-]
+dependencies = []  # standard library only; service dependencies arrive with the API phase
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6"]
-postgres = ["psycopg[binary]>=3.2"]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "bandit>=1.7", "pip-audit>=2.7"]
+docs = ["matplotlib>=3.9"]
 
 [project.scripts]
 pguard = "pguard.cli:main"

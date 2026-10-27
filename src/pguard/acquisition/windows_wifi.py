@@ -6,10 +6,14 @@ boundary so they can never reach storage, logs or alerts.
 
 from __future__ import annotations
 
-import subprocess
+import os
+
+# subprocess only runs netsh with a fixed absolute argv.
+import subprocess  # nosec B404
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import PureWindowsPath
 
 NETSH_TIMEOUT_S = 5.0
 RSSI_MIN_DBM, RSSI_MAX_DBM = -120, -1
@@ -28,13 +32,18 @@ class Sample:
     band: str
 
 
-def _fields(text: str) -> dict[str, str]:
-    out: dict[str, str] = {}
+def _interfaces(text: str) -> list[dict[str, str]]:
+    """One dict per adapter block; each block starts at its `Name` line."""
+    blocks: list[dict[str, str]] = [{}]
     for line in text.splitlines():
         key, sep, value = line.partition(":")
-        if sep:
-            out.setdefault(key.strip().lower(), value.strip())
-    return out
+        key = key.strip().lower()
+        if not sep:
+            continue
+        if key == "name" and blocks[-1]:
+            blocks.append({})
+        blocks[-1].setdefault(key, value.strip())
+    return blocks
 
 
 def _int(raw: str | None, name: str) -> int:
@@ -45,9 +54,10 @@ def _int(raw: str | None, name: str) -> int:
 
 
 def parse_netsh(text: str, t: float) -> Sample:
-    f = _fields(text)
-    if f.get("state", "").lower() != "connected":
-        raise ParseError("Wi-Fi interface is not connected")
+    connected = [b for b in _interfaces(text) if b.get("state", "").lower() == "connected"]
+    if not connected:
+        raise ParseError("no Wi-Fi interface is connected")
+    f = connected[0]
     rssi = _int(f.get("rssi"), "rssi")
     if not RSSI_MIN_DBM <= rssi <= RSSI_MAX_DBM:
         raise ParseError(f"rssi {rssi} dBm outside plausible range")
@@ -58,9 +68,16 @@ def parse_netsh(text: str, t: float) -> Sample:
                   adapter=f.get("description", ""), band=f.get("band", ""))
 
 
+def _netsh_path() -> str:
+    # Absolute path: a bare "netsh" could resolve to a planted netsh.exe in the working dir.
+    root = os.environ.get("SystemRoot", r"C:\Windows")
+    return str(PureWindowsPath(root) / "System32" / "netsh.exe")
+
+
 def _run_netsh() -> str:
-    return subprocess.run(  # fixed argv, no shell, no user input
-        ["netsh", "wlan", "show", "interfaces"],
+    # Fixed absolute argv, no shell, no user input.
+    return subprocess.run(  # nosec B603
+        [_netsh_path(), "wlan", "show", "interfaces"],
         capture_output=True, text=True, timeout=NETSH_TIMEOUT_S, check=True,
     ).stdout
 

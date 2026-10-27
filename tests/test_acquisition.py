@@ -89,3 +89,11 @@ def test_no_adapter_reports_feasibility_blocker():
     assert r.tier is Tier.UNSUPPORTED
     assert r.blocker and "no usable Wi-Fi" in r.blocker
     assert not any(r.features.values())
+
+
+def test_netsh_is_invoked_by_absolute_system32_path(monkeypatch):
+    from pguard.acquisition import windows_wifi
+
+    monkeypatch.setenv("SystemRoot", r"C:\Windows")
+    path = windows_wifi._netsh_path()
+    assert path.lower().endswith(r"system32\netsh.exe") and ":" in path

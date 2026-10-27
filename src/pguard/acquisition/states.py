@@ -20,10 +20,11 @@ REQUIRED_LABELS = ("still", "walking", "lying")
 MEAN_SHIFT_DB = 1.5
 STD_SHIFT_DB = 0.5
 MIN_SECONDS_PER_LABEL = 5
+MIN_SAMPLES_PER_LABEL = 10
 
 
 class Verdict(Enum):
-    PASS = "PASS"
+    PASS = "PASS"  # nosec B105
     FAIL_CONSTANT = "FAIL_CONSTANT"
     FAIL_INDISTINGUISHABLE = "FAIL_INDISTINGUISHABLE"
     INCONCLUSIVE = "INCONCLUSIVE"
@@ -50,11 +51,12 @@ def analyze_states(data: dict[str, Sequence[int]], hz: float) -> StateReport:
     missing = [label for label in REQUIRED_LABELS if label not in data]
     if missing:
         raise ValueError(f"missing labels: {missing}")
-    min_samples = int(hz * MIN_SECONDS_PER_LABEL)
+    # Too little data is a fact about the recording, never a verdict about the signal.
+    min_samples = max(MIN_SAMPLES_PER_LABEL, int(hz * MIN_SECONDS_PER_LABEL))
     if any(len(data[label]) < min_samples for label in REQUIRED_LABELS):
         return StateReport(Verdict.INCONCLUSIVE,
-                           f"Need at least {MIN_SECONDS_PER_LABEL} s of samples per state.",
-                           {}, ())
+                           f"Need at least {min_samples} samples per state; check the Wi-Fi "
+                           "connection and run the test again.", {}, ())
     if len({v for label in REQUIRED_LABELS for v in data[label]}) <= 1:
         return StateReport(
             Verdict.FAIL_CONSTANT,

@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from pguard import cli
 from pguard.acquisition.capability import classify
 from pguard.acquisition.probe import ProbeReport
@@ -39,3 +41,20 @@ def test_probe_states_command_exit_code_follows_verdict(tmp_path, monkeypatch, c
     moving = flat | {"walking": [-49, -41] * 30}
     monkeypatch.setattr(cli, "record_states", lambda *a, **k: moving)
     assert cli.main(["probe-states", "--seconds", "12", "--out", str(out)]) == 0
+
+
+def test_unwritable_report_path_gives_clear_error_not_traceback(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "run_probe", lambda **_: _report("MediaTek Wi-Fi 6E MT7922"))
+    bad = tmp_path / "missing-dir" / "r.json"
+    assert cli.main(["probe", "--out", str(bad)]) == 1
+    assert "cannot write report" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("cmd", ["probe", "probe-states"])
+@pytest.mark.parametrize("flag,value", [("--seconds", "0"), ("--seconds", "-5"),
+                                        ("--interval", "0"), ("--seconds", "abc")])
+def test_non_positive_or_bad_numbers_are_rejected_cleanly(cmd, flag, value, capsys):
+    with pytest.raises(SystemExit) as exc:
+        cli.main([cmd, flag, value])
+    assert exc.value.code == 2
+    assert "must be a positive number" in capsys.readouterr().err

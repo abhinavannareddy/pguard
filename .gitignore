@@ -11,3 +11,8 @@ node_modules/
 *.db
 probe-report.json
 states-report.json
+coverage.json
+
+# Dashboard lands in a later phase; page.tsx needs web/lib and web/components first.
+web/
+build/

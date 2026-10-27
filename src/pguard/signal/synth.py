@@ -13,7 +13,8 @@ NOISE_DB = {"empty": 0.25, "still": 0.25, "lying": 0.25, "walking": 3.0}
 
 
 def generate(scenario: Sequence[tuple[str, float]], hz: float, seed: int) -> list[Sample]:
-    rng = random.Random(seed)
+    # Seeded for reproducible test data; not used for security.
+    rng = random.Random(seed)  # nosec B311
     out: list[Sample] = []
     for label, seconds in scenario:
         if label not in NOISE_DB:

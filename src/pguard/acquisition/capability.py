@@ -10,7 +10,7 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 
-_CSI_CARD = re.compile(r"\bAX2[01]0\b|\bAX200\b", re.IGNORECASE)
+_CSI_CARD = re.compile(r"\bAX2[01]0\b", re.IGNORECASE)
 _INTEL = re.compile(r"intel", re.IGNORECASE)
 
 FEATURES = ("presence_motion", "inactivity_watch", "fall_candidate",

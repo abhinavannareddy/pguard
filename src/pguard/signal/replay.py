@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -23,11 +24,13 @@ def _parse(line: str, lineno: int) -> Sample:
         t, rssi = d["t"], d["rssi_dbm"]
     except (json.JSONDecodeError, KeyError, TypeError) as exc:
         raise ParseError(f"line {lineno}: malformed record") from exc
-    if isinstance(t, bool) or not isinstance(t, (int, float)) \
+    if isinstance(t, bool) or not isinstance(t, (int, float)) or not math.isfinite(t) \
             or isinstance(rssi, bool) or not isinstance(rssi, int):
-        raise ParseError(f"line {lineno}: t must be a number and rssi_dbm an integer")
-    return Sample(t=float(t), rssi_dbm=rssi, signal_pct=int(d.get("signal_pct", 0)),
-                  adapter="replay", band="")
+        raise ParseError(f"line {lineno}: t must be a finite number and rssi_dbm an integer")
+    pct = d.get("signal_pct", 0)
+    if isinstance(pct, bool) or not isinstance(pct, int):
+        raise ParseError(f"line {lineno}: signal_pct must be an integer")
+    return Sample(t=float(t), rssi_dbm=rssi, signal_pct=pct, adapter="replay", band="")
 
 
 def load_jsonl(path: Path) -> list[Sample]:

@@ -1,14 +1,14 @@
 # ADR 0001: v1 stack and scope
 
-Status: accepted (user approval, 2026-10-27)
+Status: accepted (2026-10-27)
 
 ## Decision
 
 - Hardware: one Windows laptop plus the home router (PRD Foundation section, which the PRD
   says wins any conflict). Radar nodes are out of scope.
-- Backend: Python 3.12+, FastAPI, SQLAlchemy. PostgreSQL in Docker Compose; tests use SQLite.
+- Backend: Python 3.12+, FastAPI, SQLAlchemy (added with the API phase). PostgreSQL in Docker Compose; tests use SQLite.
 - Frontend: Next.js, TypeScript, Tailwind, TanStack Query.
-- Signal processing: Python/numpy reference implementation first. A C++20 port of the hot
+- Signal processing: Python reference implementation first (standard library). A C++20 port of the hot
   path is added only if profiling on this laptop shows a need, and must match the Python
   output in a parity test.
 - Alert channels: email (baseline) and Telegram or ntfy (fast channel). SMS is excluded as paid.
