@@ -26,6 +26,21 @@ jobs:
       - run: python -m bandit -q -r src
       - run: python -m pytest --cov=pguard --cov-fail-under=90
 
+  native:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: cmake -S cpp -B cpp/build -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build cpp/build
+      - run: ctest --test-dir cpp/build --output-on-failure
+      - run: python -m pip install -e ".[dev]"
+      - run: python -m pytest tests/test_native.py
+        env:
+          PGUARD_REQUIRE_NATIVE: "1"
+
   audit:
     runs-on: ubuntu-latest
     steps:
