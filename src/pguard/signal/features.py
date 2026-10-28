@@ -6,6 +6,7 @@ QUIET. "No movement" may only be reported from data that was actually measured.
 
 from __future__ import annotations
 
+import math
 import statistics
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -15,6 +16,7 @@ from .. import PARAMS_VERSION
 from ..acquisition.windows_wifi import RSSI_MAX_DBM, RSSI_MIN_DBM, Sample
 
 _EPS = 1e-9
+MAX_WINDOWS = 1_000_000  # bounds memory for absurd time ranges
 
 
 class State(Enum):
@@ -90,7 +92,10 @@ DEFAULT_PARAMS = Params()
 def extract(
     samples: Iterable[Sample], t0: float, t1: float, p: Params = DEFAULT_PARAMS,
 ) -> list[WindowFeatures]:
-    n = int((t1 - t0) / p.window_s + _EPS)
+    span = (t1 - t0) / p.window_s + _EPS
+    if not math.isfinite(span) or span > MAX_WINDOWS:
+        raise ValueError(f"time range spans more than {MAX_WINDOWS} windows")
+    n = int(span)
     valid: list[list[Sample]] = [[] for _ in range(n)]
     corrupt = [0] * n
     for s in sorted(samples, key=lambda s: s.t):

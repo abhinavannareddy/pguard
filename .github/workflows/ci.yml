@@ -36,6 +36,12 @@ jobs:
       - run: cmake -S cpp -B cpp/build -DCMAKE_BUILD_TYPE=Release
       - run: cmake --build cpp/build
       - run: ctest --test-dir cpp/build --output-on-failure
+      - name: Sanitizers (address + undefined behaviour)
+        run: |
+          FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all"
+          cmake -S cpp -B cpp/build-asan -DCMAKE_BUILD_TYPE=Debug             -DCMAKE_C_FLAGS="$FLAGS" -DCMAKE_CXX_FLAGS="$FLAGS"             -DCMAKE_EXE_LINKER_FLAGS="$FLAGS" -DCMAKE_SHARED_LINKER_FLAGS="$FLAGS"
+          cmake --build cpp/build-asan
+          ctest --test-dir cpp/build-asan --output-on-failure
       - run: python -m pip install -e ".[dev]"
       - run: python -m pytest tests/test_native.py
         env:

@@ -88,3 +88,17 @@ def test_ring_buffer_counts_dropped_samples_instead_of_hiding_them():
     assert t == [2.0, 3.0, 4.0, 5.0] and rssi == [-42, -43, -44, -45]
     assert r.drain() == ([], [])
     r.close()
+
+
+def test_hostile_timestamps_are_ignored_and_match_the_reference():
+    from dataclasses import replace
+
+    s = generate([("still", 10)], hz=5.0, seed=4)
+    s = [*s, replace(s[0], t=1e300), replace(s[0], t=-1e300), replace(s[0], t=1e18)]
+    _assert_same(extract(s, 0, 10, P), extract_native(s, 0, 10, P))
+
+
+@pytest.mark.parametrize("fn", [extract, extract_native])
+def test_absurd_time_range_is_rejected_not_allocated(fn):
+    with pytest.raises(ValueError):
+        fn([], 0, 1e300, P)

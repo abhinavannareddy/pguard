@@ -9,6 +9,7 @@
 namespace {
 constexpr double kEps = 1e-9;
 constexpr int32_t kRssiMin = -120, kRssiMax = -1;
+constexpr double kMaxWindows = 1e9;  // far above any real recording; bounds memory
 
 double round4(double v) { return std::round(v * 1e4) / 1e4; }
 
@@ -72,8 +73,10 @@ PG_API int64_t pg_extract_series(const double *t, const int32_t *rssi, size_t n,
   if (!p || (n && (!t || !rssi)) || (max_out && !out)) return PG_ERR_NULL;
   if (!valid_params(*p) || !std::isfinite(t0) || !std::isfinite(t1)) return PG_ERR_PARAMS;
   const double raw = (t1 - t0) / p->window_s + kEps;
+  if (!std::isfinite(raw)) return PG_ERR_PARAMS;
+  // Range-check before converting: a double outside the integer range is undefined behaviour.
+  if (raw >= static_cast<double>(max_out) + 1.0 || raw >= kMaxWindows) return PG_ERR_BUFFER;
   const int64_t windows = raw < 1.0 ? 0 : static_cast<int64_t>(raw);
-  if (static_cast<size_t>(windows) > max_out) return PG_ERR_BUFFER;
 
   std::vector<size_t> order(n);
   std::iota(order.begin(), order.end(), size_t{0});
@@ -82,8 +85,9 @@ PG_API int64_t pg_extract_series(const double *t, const int32_t *rssi, size_t n,
   std::vector<Bucket> buckets(static_cast<size_t>(windows));
   for (size_t idx : order) {
     if (!std::isfinite(t[idx]) || t[idx] < t0) continue;
-    const auto i = static_cast<int64_t>((t[idx] - t0) / p->window_s + kEps);
-    if (i >= windows) continue;
+    const double d = (t[idx] - t0) / p->window_s + kEps;
+    if (!(d >= 0.0) || d >= static_cast<double>(windows)) continue;
+    const auto i = static_cast<int64_t>(d);
     Bucket &b = buckets[static_cast<size_t>(i)];
     if (rssi[idx] >= kRssiMin && rssi[idx] <= kRssiMax) {
       b.values.push_back(rssi[idx]);

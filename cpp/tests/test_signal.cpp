@@ -88,6 +88,17 @@ int main() {
     CHECK(pg_ring_create(0) == nullptr);
     pg_ring_destroy(ring);
   }
+  {  // hostile timestamps and ranges must not index out of bounds or overflow
+    std::vector<double> t{1e300, 1e18, 0.5, 1.5};
+    std::vector<int32_t> r{-40, -40, -41, -41};
+    series(t, r, 2.0, w, &n);
+    CHECK(n == 1 && w[0].n_valid == 2);  // only the two in-range samples are counted
+    pg_window out[4];
+    CHECK(pg_extract_series(t.data(), r.data(), t.size(), 0.0, 1e300, &P, out, 4) == PG_ERR_BUFFER);
+    CHECK(pg_extract_series(t.data(), r.data(), t.size(), -1e308, 1e308, &P, out, 4) ==
+          PG_ERR_PARAMS);
+    CHECK(pg_extract_series(t.data(), r.data(), t.size(), 0.0, 1e19, &P, out, 4) == PG_ERR_BUFFER);
+  }
   CHECK(pg_abi_version() == 1);
   std::printf(failures ? "C++ tests FAILED: %d\n" : "C++ tests passed\n", failures);
   return failures ? EXIT_FAILURE : EXIT_SUCCESS;

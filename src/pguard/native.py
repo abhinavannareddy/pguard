@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import ctypes as C
+import math
 import os
 import sys
 from collections.abc import Iterable
 from pathlib import Path
 
 from .acquisition.windows_wifi import Sample
-from .signal.features import Params, State, WindowFeatures
+from .signal.features import MAX_WINDOWS, Params, State, WindowFeatures
 
 ABI_VERSION = 1
 _FLAG_NAMES = ((1, "no_samples"), (2, "corrupt_samples"), (4, "low_coverage"), (8, "stale"))
@@ -89,7 +90,10 @@ def extract_native(samples: Iterable[Sample], t0: float, t1: float, p: Params) -
     rssi = (C.c_int32 * n)(*(s.rssi_dbm for s in data))
     params = _Params(p.window_s, p.expected_hz, p.stale_s, p.min_coverage, p.min_quality,
                      p.motion_threshold_db)
-    capacity = max(0, int((t1 - t0) / p.window_s + _EPS)) if p.window_s > 0 else 0
+    span = (t1 - t0) / p.window_s + _EPS if p.window_s > 0 else 0.0
+    if not math.isfinite(span) or span > MAX_WINDOWS:
+        raise ValueError(f"time range spans more than {MAX_WINDOWS} windows")
+    capacity = max(0, int(span))
     out = (_Window * max(capacity, 1))()
     count = lib.pg_extract_series(t, rssi, n, t0, t1, C.byref(params), out, capacity)
     if count == -1:

@@ -16,3 +16,4 @@ coverage.json
 # Dashboard lands in a later phase; page.tsx needs web/lib and web/components first.
 web/
 build/
+cpp/build-asan/
