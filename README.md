@@ -9,7 +9,7 @@ possible falls, and brings a chosen person into the loop quickly. It is built on
 
 ![CI](https://github.com/abhinavannareddy/pguard/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue)
-![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)
 ![Security](https://img.shields.io/badge/bandit-0%20issues-brightgreen)
 
 ---
@@ -24,7 +24,7 @@ possible falls, and brings a chosen person into the loop quickly. It is built on
   router support, and switches off anything the hardware cannot back up.
 - **People decide.** Only a person can confirm an event. Alert wording is checked
   automatically for accusatory or diagnostic terms.
-- **Engineered to last.** Test-first development, 97% line coverage, static security
+- **Engineered to last.** Test-first development, 96% line coverage, static security
   analysis, dependency audit, non-root container and cross-platform CI.
 
 ## How it works
@@ -80,8 +80,9 @@ Every transition is appended to the event's history with the actor and time.
 
 ## Measured on real hardware
 
-Hub laptop: MediaTek Wi-Fi 6E MT7922, Windows 11, 5 GHz. A 60-second recording of a static
-room, with zero dropped readings ([raw data](docs/data/live-laptop-2026-10-27.jsonl)):
+Hub laptop: MediaTek Wi-Fi 6E MT7922, Windows 11, 5 GHz. A 60-second recording with zero
+dropped readings ([raw data](docs/data/live-laptop-2026-10-27.jsonl),
+[counters](docs/data/live-laptop-2026-10-27.meta.json)):
 
 ![Live baseline](docs/img/live-baseline.png)
 
@@ -91,7 +92,7 @@ room, with zero dropped readings ([raw data](docs/data/live-laptop-2026-10-27.js
 | `netsh` sample rate | 2.8 to 5.0 Hz across runs |
 | Native Wi-Fi API sample rate | 19.4 Hz |
 | Dropped readings | 0 in every run |
-| Static-room stability | Constant reading over 60 s |
+| RSSI during the 60 s recording | Constant at -44 dBm |
 
 Tier 1 provides presence and motion, inactivity watch and fall candidates. Breathing needs
 channel state information (CSI), which requires an Intel AX200/AX210 card on Linux, so
@@ -105,7 +106,7 @@ PGuard keeps it switched off on this hub. **Next milestone:** the labeled moveme
 | Check | Tool | Result |
 |---|---|---|
 | Unit and regression tests | pytest | all passing |
-| Line coverage | pytest-cov | 97% |
+| Line coverage | pytest-cov | 96% |
 | Lint | ruff | clean |
 | Static security analysis | bandit | 0 issues |
 | Dependency vulnerabilities | pip-audit | none found |
@@ -124,6 +125,9 @@ python -m venv .venv
 
 # Labeled movement test: sit still, walk, lie still (about 85 s, beeps at each step)
 .venv\Scripts\pguard probe-states
+
+# See the pipeline on synthetic data (any OS, no hardware needed)
+.venv\Scripts\pguard demo
 ```
 
 Regenerate every figure from the recordings and the code:
@@ -138,7 +142,7 @@ Docker (replay and synthetic modes; live sensing needs a Windows host):
 
 ```bash
 docker build -t pguard .
-docker run --rm pguard --help
+docker run --rm pguard demo
 ```
 
 ## Project layout

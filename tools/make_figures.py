@@ -43,14 +43,17 @@ def _states_axis(ax, windows) -> None:
 
 def live_baseline() -> None:
     s = load_jsonl(LIVE)
+    meta = json.loads(LIVE.with_suffix(".meta.json").read_text(encoding="utf-8"))
+    if len(s) != meta["samples"]:
+        raise ValueError("recording and its meta file disagree on the sample count")
     fig, ax = plt.subplots(figsize=(9, 3))
     ax.plot([x.t for x in s], [x.rssi_dbm for x in s], ".", ms=4, color="#1565c0")
     ax.set_ylim(-60, -30)
     ax.set_xlabel("time (s)")
     ax.set_ylabel("RSSI (dBm)")
-    hz = len(s) / (s[-1].t - s[0].t)
-    ax.set_title(f"Live recording on the hub laptop: static room, {len(s)} samples, "
-                 f"{hz:.2f} Hz, 0 dropouts", loc="left")
+    hz = meta["samples"] / meta["duration_s"]
+    ax.set_title(f"Live recording on the hub laptop: {meta['samples']} samples in "
+                 f"{meta['duration_s']} s ({hz:.2f} Hz), {meta['dropouts']} dropouts", loc="left")
     fig.tight_layout()
     fig.savefig(IMG / "live-baseline.png")
     plt.close(fig)

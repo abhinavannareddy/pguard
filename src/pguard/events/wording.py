@@ -27,17 +27,25 @@ _TITLES = {
 }
 
 
+# Irregular forms that a plain suffix cannot produce.
+_EXTRA_FORMS = {"diagnosis": ("diagnoses",)}
+_SUFFIXES = "(?:s|es|ed|ing)?"
+
+
 def _pattern(term: str) -> re.Pattern[str]:
-    return re.compile(rf"(?<![\w-]){re.escape(term)}(?![\w-])", re.IGNORECASE)
+    """Match the term and its plural or verb forms ("intruders", "assaulted", "break-ins")."""
+    forms = "|".join(re.escape(f) for f in (term, *_EXTRA_FORMS.get(term, ())))
+    return re.compile(rf"(?<![\w-])(?:{forms}){_SUFFIXES}(?![\w-])", re.IGNORECASE)
 
 
-_PATTERNS = {term: _pattern(term) for term in (*BANNED_TERMS, _CONFIRMED)}
+_PATTERNS = {term: _pattern(term) for term in BANNED_TERMS}
+_CONFIRMED_PATTERN = re.compile(rf"(?<![\w-]){_CONFIRMED}(?![\w-])", re.IGNORECASE)
 
 
 def check_wording(text: str, confirmed: bool) -> list[str]:
     """Return every banned term found in `text`; an empty list means the text is acceptable."""
     found = [t for t in BANNED_TERMS if _PATTERNS[t].search(text)]
-    if not confirmed and _PATTERNS[_CONFIRMED].search(text):
+    if not confirmed and _CONFIRMED_PATTERN.search(text):
         found.append(_CONFIRMED)
     return found
 

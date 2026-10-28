@@ -1,0 +1,8 @@
+{
+  "recorded": "2026-10-27",
+  "source": "netsh wlan show interfaces, polled every 0.1 s plus command latency",
+  "duration_s": 60,
+  "samples": 177,
+  "dropouts": 0,
+  "note": "Values taken from the recording run's own printed counters."
+}

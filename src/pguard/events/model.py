@@ -44,10 +44,21 @@ class InvalidTransition(ValueError):
     pass
 
 
+SYSTEM_ID = "pguard"
+
+
 @dataclass(frozen=True)
 class Actor:
     kind: str
     id: str
+
+    def __post_init__(self) -> None:
+        if self.kind not in ("person", "system"):
+            raise ValueError(f"unknown actor kind {self.kind!r}")
+        if self.kind == "system" and self.id != SYSTEM_ID:
+            raise ValueError("the system actor has a fixed id")
+        if self.kind == "person" and (not self.id.strip() or self.id.strip().lower() == SYSTEM_ID):
+            raise ValueError("a person actor needs a real, non-system identity for the audit log")
 
     @classmethod
     def person(cls, actor_id: str) -> Actor:
@@ -55,7 +66,7 @@ class Actor:
 
     @classmethod
     def system(cls) -> Actor:
-        return cls("system", "pguard")
+        return cls("system", SYSTEM_ID)
 
 
 @dataclass(frozen=True)

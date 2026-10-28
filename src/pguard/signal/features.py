@@ -68,6 +68,8 @@ def _window(t_start: float, valid: list[Sample], corrupt: int, p: Params) -> Win
     stale = bool(valid) and t_end - valid[-1].t > p.stale_s + _EPS
     flags = tuple(f for f, on in (
         ("no_samples", not valid), ("corrupt_samples", corrupt > 0),
+        # low_coverage explains UNCERTAIN: quality never exceeds coverage, so coverage below
+        # min_quality always means quality below it too.
         ("low_coverage", coverage < p.min_quality), ("stale", stale)) if on)
     if coverage < p.min_coverage:
         state = State.NO_DATA

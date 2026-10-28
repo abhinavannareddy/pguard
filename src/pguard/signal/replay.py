@@ -22,15 +22,23 @@ def _parse(line: str, lineno: int) -> Sample:
     try:
         d = json.loads(line)
         t, rssi = d["t"], d["rssi_dbm"]
-    except (json.JSONDecodeError, KeyError, TypeError) as exc:
+    except (ValueError, KeyError, TypeError) as exc:  # JSONDecodeError is a ValueError
         raise ParseError(f"line {lineno}: malformed record") from exc
-    if isinstance(t, bool) or not isinstance(t, (int, float)) or not math.isfinite(t) \
+    if isinstance(t, bool) or not isinstance(t, (int, float)) \
             or isinstance(rssi, bool) or not isinstance(rssi, int):
         raise ParseError(f"line {lineno}: t must be a finite number and rssi_dbm an integer")
+    try:
+        t = float(t)  # a huge JSON integer overflows here
+    except OverflowError as exc:
+        raise ParseError(f"line {lineno}: t is out of range") from exc
+    if not math.isfinite(t):
+        raise ParseError(f"line {lineno}: t must be a finite number")
     pct = d.get("signal_pct", 0)
-    if isinstance(pct, bool) or not isinstance(pct, int):
-        raise ParseError(f"line {lineno}: signal_pct must be an integer")
-    return Sample(t=float(t), rssi_dbm=rssi, signal_pct=pct, adapter="replay", band="")
+    if isinstance(pct, float) and pct.is_integer():
+        pct = int(pct)
+    if isinstance(pct, bool) or not isinstance(pct, int) or not 0 <= pct <= 100:
+        raise ParseError(f"line {lineno}: signal_pct must be a whole number from 0 to 100")
+    return Sample(t=t, rssi_dbm=rssi, signal_pct=pct, adapter="replay", band="")
 
 
 def load_jsonl(path: Path) -> list[Sample]:
