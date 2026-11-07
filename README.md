@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/img/hero.png" alt="PGuard: measured coverage, tests and live sample rate"></p>
+
 # PGuard
 
 **Camera-free safety monitoring from the Wi-Fi a home already has.**
@@ -26,6 +28,42 @@ possible falls, and brings a chosen person into the loop quickly. It is built on
   automatically for accusatory or diagnostic terms.
 - **Engineered to last.** Test-first development, 96% line coverage, static security
   analysis, dependency audit, non-root container and cross-platform CI.
+
+## See it work
+
+Every image below is produced by running PGuard's own code or commands
+(`tools/make_figures.py`, `tools/make_proof.py`). Synthetic scenarios are labelled as such.
+
+### Real output from the hub laptop
+
+![CLI output](docs/img/terminal-probe-demo.png)
+![Test run](docs/img/terminal-tests.png)
+
+### It knows what this hardware can and cannot do
+
+Features the adapter cannot back up are switched off, and the limits are stated in the report.
+
+![Capability report](docs/img/capability.png)
+
+### Five scenarios, one pipeline
+
+Still, walking and lying still are told apart, and a dropout or weak link is never shown as calm.
+
+![Scenarios](docs/img/scenarios.png)
+
+### Where the motion rule switches on
+
+![Sensitivity](docs/img/synthetic-accuracy.png)
+
+On synthetic data the rule reports 0% motion for a still room and 100% for walking-level
+fluctuation. This checks the logic, not real-home accuracy, which is still unmeasured.
+
+### A person is always in the loop
+
+![Audit trail](docs/img/event-audit.png)
+![Wording guard](docs/img/wording-guard.png)
+
+---
 
 ## How it works
 
@@ -136,6 +174,7 @@ Regenerate every figure from the recordings and the code:
 .venv\Scripts\python -m pip install -e ".[dev,docs]"
 .venv\Scripts\python -m pytest --cov=pguard --cov-report=json:coverage.json
 .venv\Scripts\python tools\make_figures.py
+.venv\Scripts\python tools\make_proof.py
 ```
 
 Docker (replay and synthetic modes; live sensing needs a Windows host):
