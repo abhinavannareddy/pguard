@@ -65,6 +65,17 @@ fluctuation. This checks the logic, not real-home accuracy, which is still unmea
 
 ---
 
+### Concept renders
+
+Stylised views driven by PGuard's synthetic pipeline (`tools/make_scifi.py`). They show the idea,
+not a measurement of any home.
+
+![Signal field](docs/img/scifi-signal-field.png)
+![Motion radar](docs/img/scifi-radar.png)
+![Command view](docs/img/scifi-hud.png)
+
+---
+
 ## How it works
 
 ```mermaid
